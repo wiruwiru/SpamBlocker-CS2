@@ -1,0 +1,32 @@
+{
+  "prefix": "{yellow}[SpamBlocker]{default}",
+  "no_permissions": "{red}У вас нет прав для использования этой команды.",
+  "chat_message_blocked": "{red}Ваше сообщение было заблокировано из-за неподходящего содержания.",
+  "name_changed": "{orange}Ваше имя было изменено из-за неподходящего содержания.",
+  "admin_blocked_message": "Сообщение от {0} заблокировано",
+  "admin_name_change": "Смена имени для",
+  "violation_by": "нарушение от",
+  "public_chat": "общий чат",
+  "team_chat": "командный чат",
+  
+  "discord_player": "Игрок",
+  "discord_name": "Имя:",
+  "discord_steamid": "SteamID:",
+  "discord_violation_type": "Тип Нарушения",
+  "discord_reason": "Причина",
+  "discord_detected_content": "Обнаруженное Содержание",
+  "discord_time": "Время",
+  "discord_steam_profile": "Профиль Steam",
+  "discord_view_profile": "Просмотреть Профиль",
+  "discord_violation_title": "Нарушение SpamBlocker",
+  "discord_violation_description": "Нарушение обнаружено на **{0}**",
+  "discord_footer_text": "Система SpamBlocker",
+  
+  "discord_violation_blacklisted_word": "Запрещенное Слово",
+  "discord_violation_chat": "Нарушение Чата",
+  "discord_violation_team_chat": "Нарушение Командного Чата",
+  "discord_violation_blocked_url": "Заблокированный URL",
+  "discord_violation_blocked_ip": "Заблокированный IP",
+  "discord_violation_blacklisted_name": "Запрещенное Имя",
+  "discord_violation_name": "Нарушение Имени"
+}

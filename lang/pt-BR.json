@@ -1,0 +1,32 @@
+{
+  "prefix": "{yellow}[SpamBlocker]{default}",
+  "no_permissions": "{red}Você não tem permissões para usar este comando.",
+  "chat_message_blocked": "{red}Sua mensagem foi bloqueada devido ao conteúdo inadequado.",
+  "name_changed": "{orange}Seu nome foi alterado devido ao conteúdo inadequado.",
+  "admin_blocked_message": "Mensagem de {0} bloqueada",
+  "admin_name_change": "Mudança de nome para",
+  "violation_by": "violação por",
+  "public_chat": "chat público",
+  "team_chat": "chat da equipe",
+  
+  "discord_player": "Jogador",
+  "discord_name": "Nome:",
+  "discord_steamid": "SteamID:",
+  "discord_violation_type": "Tipo de Violação",
+  "discord_reason": "Motivo",
+  "discord_detected_content": "Conteúdo Detectado",
+  "discord_time": "Hora",
+  "discord_steam_profile": "Perfil Steam",
+  "discord_view_profile": "Ver Perfil",
+  "discord_violation_title": "Violação SpamBlocker",
+  "discord_violation_description": "Violação detectada em **{0}**",
+  "discord_footer_text": "Sistema SpamBlocker",
+  
+  "discord_violation_blacklisted_word": "Palavra Proibida",
+  "discord_violation_chat": "Violação de Chat",
+  "discord_violation_team_chat": "Violação de Chat da Equipe",
+  "discord_violation_blocked_url": "URL Bloqueada",
+  "discord_violation_blocked_ip": "IP Bloqueado",
+  "discord_violation_blacklisted_name": "Nome Proibido",
+  "discord_violation_name": "Violação de Nome"
+}
