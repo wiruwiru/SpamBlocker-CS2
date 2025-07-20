@@ -22,7 +22,6 @@ namespace SpamBlocker.Events
         public void RegisterEvents(BasePlugin plugin)
         {
             plugin.RegisterListener<Listeners.OnMapStart>(OnMapStart);
-            plugin.RegisterListener<Listeners.OnClientAuthorized>(OnClientAuthorized);
             plugin.RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
             plugin.RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         }
@@ -30,18 +29,6 @@ namespace SpamBlocker.Events
         private void OnMapStart(string mapName)
         {
             LoggingUtils.LogDebug($"Map started: {mapName}", _config);
-        }
-
-        private void OnClientAuthorized(int playerSlot, SteamID steamId)
-        {
-            CCSPlayerController? player = Utilities.GetPlayerFromSlot(playerSlot);
-
-            if (!PlayerUtils.IsValidPlayer(player)) return;
-
-            Server.NextFrame(() =>
-            {
-                var timer = new CounterStrikeSharp.API.Modules.Timers.Timer(2.0f, () => CheckPlayerName(player!));
-            });
         }
 
         private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -77,11 +64,7 @@ namespace SpamBlocker.Events
             {
                 _filterManager.HandleNameViolation(player, filterResult);
 
-                LoggingUtils.LogDebug(
-                    $"Player name violation detected: {player.PlayerName} - {filterResult.Reason}",
-                    _config
-                );
-
+                LoggingUtils.LogDebug($"Player name violation detected: {player.PlayerName} - {filterResult.Reason}", _config);
                 LoggingUtils.LogViolation(player, "Name", filterResult, _config);
             }
         }
