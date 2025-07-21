@@ -12,13 +12,13 @@ namespace SpamBlocker.Managers
     {
         private readonly SpamBlockerConfig _config;
         private readonly BasePlugin _plugin;
-        private readonly Dictionary<int, string> _originalPlayerNames;
+        private readonly HashSet<int> _renamedPlayers;
 
         public FilterManager(SpamBlockerConfig config, BasePlugin plugin)
         {
             _config = config;
             _plugin = plugin;
-            _originalPlayerNames = new Dictionary<int, string>();
+            _renamedPlayers = new HashSet<int>();
             LoggingUtils.LogDebug("FilterManager initialized successfully", _config);
         }
 
@@ -381,33 +381,28 @@ namespace SpamBlocker.Managers
 
             LoggingUtils.LogDebug($"Handling name violation for {PlayerUtils.GetSafePlayerName(player)}: {result.Reason}", _config);
 
-            if (!_originalPlayerNames.ContainsKey(player.Slot) && !string.IsNullOrEmpty(player.PlayerName))
+            string newName = GenerateReplacementName(player);
+            bool renamed = RenamePlayerSafely(player, newName);
+            if (renamed)
             {
-                _originalPlayerNames[player.Slot] = player.PlayerName;
-                LoggingUtils.LogDebug($"Stored original name for slot {player.Slot}", _config);
-            }
-
-            string newName = _config.NameProtection.ReplacementName;
-            if (_config.NameProtection.AddRandomSuffix)
-            {
-                var random = new Random();
-                newName += $"_{random.Next(1000, 9999)}";
-            }
-
-            try
-            {
-                player.PlayerName = newName;
-                LoggingUtils.LogDebug($"Player {player.Slot} renamed to '{newName}'", _config);
+                _renamedPlayers.Add(player.Slot);
+                LoggingUtils.LogDebug($"Player {player.Slot} successfully renamed to '{newName}' and marked as renamed", _config);
 
                 if (_config.NameProtection.NotifyPlayer)
                 {
-                    NotificationUtils.NotifyPlayer(player, _plugin.Localizer["name_changed"], _plugin);
+                    var timer = new CounterStrikeSharp.API.Modules.Timers.Timer(0.5f, () =>
+                    {
+                        if (player.IsValid)
+                        {
+                            NotificationUtils.NotifyPlayer(player, _plugin.Localizer["name_changed"], _plugin);
+                        }
+                    });
                 }
 
                 if (_config.NameProtection.NotifyAdmins)
                 {
                     NotificationUtils.NotifyAdminsViolation(
-                        player.PlayerName,
+                        newName,
                         _plugin.Localizer["admin_name_change"],
                         result.Reason,
                         result.DetectedContent,
@@ -415,29 +410,69 @@ namespace SpamBlocker.Managers
                     );
                 }
             }
-            catch (Exception ex)
+            else
             {
-                LoggingUtils.LogError($"Error renaming player {PlayerUtils.GetSafePlayerName(player)}: {ex.Message}");
+                LoggingUtils.LogError($"Failed to rename player {PlayerUtils.GetSafePlayerName(player)} to '{newName}'");
             }
         }
 
-        public void RestoreOriginalName(CCSPlayerController player)
+        private string GenerateReplacementName(CCSPlayerController player)
         {
-            if (!PlayerUtils.IsValidPlayer(player))
-                return;
-
-            if (_originalPlayerNames.TryGetValue(player.Slot, out string? originalName))
+            string newName = _config.NameProtection.ReplacementName;
+            if (_config.NameProtection.AddUserIdSuffix && player.UserId.HasValue)
             {
-                try
+                newName += $"_{player.UserId.Value}";
+                LoggingUtils.LogDebug($"Generated replacement name with userid suffix: '{newName}' for player {player.UserId.Value}", _config);
+            }
+            else if (_config.NameProtection.AddUserIdSuffix)
+            {
+                var random = new Random();
+                newName += $"_{random.Next(1000, 9999)}";
+                LoggingUtils.LogDebug($"Generated replacement name with random suffix (userid not available): '{newName}'", _config);
+            }
+
+            return newName;
+        }
+
+        private bool RenamePlayerSafely(CCSPlayerController player, string newName)
+        {
+            if (player == null || !player.IsValid || string.IsNullOrEmpty(newName))
+            {
+                LoggingUtils.LogDebug("Invalid parameters for renaming", _config);
+                return false;
+            }
+
+            try
+            {
+                string oldName = player.PlayerName;
+
+                Server.NextFrame(() =>
                 {
-                    player.PlayerName = originalName;
-                    _originalPlayerNames.Remove(player.Slot);
-                    LoggingUtils.LogDebug($"Restored original name for player slot {player.Slot}", _config);
-                }
-                catch (Exception ex)
-                {
-                    LoggingUtils.LogError($"Error restoring original name for player {PlayerUtils.GetSafePlayerName(player)}: {ex.Message}");
-                }
+                    try
+                    {
+                        if (player.IsValid)
+                        {
+                            player.PlayerName = newName;
+                            Utilities.SetStateChanged(player, "CBasePlayerController", "m_iszPlayerName");
+
+                            var @event = new EventNextlevelChanged(true);
+                            @event.FireEvent(false);
+
+                            LoggingUtils.LogDebug($"Player renamed with base controller and event: '{oldName}' -> '{newName}'", _config);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggingUtils.LogError($"Error renaming player: {ex.Message}");
+                    }
+                });
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LoggingUtils.LogError($"Error renaming player {PlayerUtils.GetSafePlayerName(player)} to '{newName}': {ex.Message}");
+                return false;
             }
         }
 
@@ -445,14 +480,42 @@ namespace SpamBlocker.Managers
         {
             if (PlayerUtils.IsValidPlayer(player))
             {
-                _originalPlayerNames.Remove(player.Slot);
+                _renamedPlayers.Remove(player.Slot);
                 LoggingUtils.LogDebug($"Cleaned up data for disconnected player slot {player.Slot}", _config);
+            }
+        }
+
+        public void ReapplyRenamedNames()
+        {
+            LoggingUtils.LogDebug("Checking for players with replaced names to reapply", _config);
+
+            foreach (int slot in _renamedPlayers.ToList())
+            {
+                var player = Utilities.GetPlayerFromSlot(slot);
+                if (PlayerUtils.IsValidPlayer(player))
+                {
+                    string expectedName = GenerateReplacementName(player!);
+                    if (player!.PlayerName != expectedName)
+                    {
+                        LoggingUtils.LogDebug($"Reapplying name '{expectedName}' to player {player.UserId} (current: '{player.PlayerName}')", _config);
+                        RenamePlayerSafely(player, expectedName);
+                    }
+                    else
+                    {
+                        LoggingUtils.LogDebug($"Player {player.UserId} already has correct name '{expectedName}'", _config);
+                    }
+                }
+                else
+                {
+                    _renamedPlayers.Remove(slot);
+                    LoggingUtils.LogDebug($"Removed invalid player slot {slot} from renamed players list", _config);
+                }
             }
         }
 
         public void ClearCache()
         {
-            _originalPlayerNames.Clear();
+            _renamedPlayers.Clear();
             LoggingUtils.LogDebug("FilterManager cache cleared", _config);
         }
     }

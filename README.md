@@ -31,7 +31,6 @@ SpamBlocker is an advanced filtering and protection system that provides compreh
 | `embed_color`     | Hex color for Discord embeds. (**Default**: `"#ff0000"`)                                        | **YES**  |
 | `mention_role_id` | Discord role ID to mention on violations. (**Default**: `""`)                                   | **NO**   |
 | `server_name`     | Server name to display in Discord embeds. (**Default**: `"SpamBlocker Server"`)                 | **YES**  |
-| `include_steam_profile` | Include Steam profile links in Discord logs. (**Default**: `true`)                        | **YES**  |
 | `log_word_violations` | Log blacklisted word violations to Discord. (**Default**: `true`)                           | **YES**  |
 | `log_url_violations` | Log blocked URL violations to Discord. (**Default**: `true`)                                 | **YES**  |
 | `log_ip_violations` | Log blocked IP violations to Discord. (**Default**: `true`)                                   | **YES**  |
@@ -65,7 +64,7 @@ SpamBlocker is an advanced filtering and protection system that provides compreh
 |-------------------|-----------------------------------------------------------------------------------------------------|----------|
 | `enabled`         | Enable/disable name protection. (**Default**: `true`)                                            | **YES**  |
 | `replacement_name` | Name to use when renaming players with violations. (**Default**: `"Player"`)                     | **YES**  |
-| `add_random_suffix` | Add random number suffix to replacement names. (**Default**: `true`)                           | **YES**  |
+| `add_userid_suffix` | Add player's UserID as suffix to replacement names. (**Default**: `true`)                     | **YES**  |
 | `notify_player`   | Notify player when their name is changed. (**Default**: `true`)                                 | **YES**  |
 | `notify_admins`   | Notify admins when a player's name is changed. (**Default**: `true`)                           | **YES**  |
 | `name_blacklist`  | Individual blacklist configuration specifically for player names. See detailed configuration below. | **YES**  |

@@ -96,8 +96,8 @@ namespace SpamBlocker.Configs
         [JsonPropertyName("replacement_name")]
         public string ReplacementName { get; set; } = "Player";
 
-        [JsonPropertyName("add_random_suffix")]
-        public bool AddRandomSuffix { get; set; } = true;
+        [JsonPropertyName("add_userid_suffix")]
+        public bool AddUserIdSuffix { get; set; } = true;
 
         [JsonPropertyName("name_blacklist")]
         public NameBlacklistConfig NameBlacklist { get; set; } = new();

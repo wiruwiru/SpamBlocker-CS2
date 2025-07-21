@@ -24,6 +24,7 @@ namespace SpamBlocker.Events
             plugin.RegisterListener<Listeners.OnMapStart>(OnMapStart);
             plugin.RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
             plugin.RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
+            plugin.RegisterEventHandler<EventRoundStart>(OnRoundStart);
         }
 
         private void OnMapStart(string mapName)
@@ -40,6 +41,18 @@ namespace SpamBlocker.Events
             Server.NextFrame(() =>
             {
                 var timer = new CounterStrikeSharp.API.Modules.Timers.Timer(2.0f, () => CheckPlayerName(player!));
+            });
+
+            return HookResult.Continue;
+        }
+
+        private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+        {
+            LoggingUtils.LogDebug("Round start event triggered", _config);
+
+            Server.NextFrame(() =>
+            {
+                _filterManager.ReapplyRenamedNames();
             });
 
             return HookResult.Continue;
