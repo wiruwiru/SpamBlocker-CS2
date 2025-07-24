@@ -178,14 +178,25 @@ namespace SpamBlocker.Managers
 
                 if (ValidationUtils.IsValidIpAddress(ip))
                 {
-                    LoggingUtils.LogDebug($"Processing valid IP without port: '{ip}' - blocking", _config);
-                    return new FilterResult
+                    LoggingUtils.LogDebug($"Processing valid IP without port: '{ip}'", _config);
+
+                    bool isInIpWhitelist = IsIpInWhitelist(ip);
+                    LoggingUtils.LogDebug($"IP '{ip}' in IP whitelist: {isInIpWhitelist}", _config);
+                    if (!isInIpWhitelist)
                     {
-                        IsBlocked = true,
-                        Reason = "IP addresses without port not allowed",
-                        DetectedContent = ip,
-                        ViolationType = ViolationType.BlockedIp
-                    };
+                        LoggingUtils.LogDebug($"IP '{ip}' not in whitelist - blocking", _config);
+                        return new FilterResult
+                        {
+                            IsBlocked = true,
+                            Reason = "IP address not in whitelist",
+                            DetectedContent = ip,
+                            ViolationType = ViolationType.BlockedIp
+                        };
+                    }
+                    else
+                    {
+                        LoggingUtils.LogDebug($"IP '{ip}' found in whitelist - allowing", _config);
+                    }
                 }
             }
 
@@ -369,6 +380,12 @@ namespace SpamBlocker.Managers
         {
             LoggingUtils.LogDebug($"Checking if IP:Port '{ipPort}' is in whitelist", _config);
             return _config.IpFilter.WhitelistIpPorts.Any(whitelistEntry => string.Equals(whitelistEntry.Trim(), ipPort, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool IsIpInWhitelist(string ip)
+        {
+            LoggingUtils.LogDebug($"Checking if IP '{ip}' is in IP whitelist", _config);
+            return _config.IpFilter.WhitelistIps.Any(whitelistIp => string.Equals(whitelistIp.Trim(), ip, StringComparison.OrdinalIgnoreCase));
         }
 
         public void HandleNameViolation(CCSPlayerController player, FilterResult result)
