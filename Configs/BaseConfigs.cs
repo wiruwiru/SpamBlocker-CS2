@@ -84,7 +84,13 @@ namespace SpamBlocker.Configs
         public List<string> WhitelistIpPorts { get; set; } = new List<string>
         {
             "0.0.0.0:27060",
-            "121.0.0.1:27015"
+            "127.0.0.1:27015"
+        };
+
+        [JsonPropertyName("whitelist_ips")]
+        public List<string> WhitelistIps { get; set; } = new List<string>
+        {
+            "0.0.0.0"
         };
     }
 
