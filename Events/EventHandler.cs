@@ -25,6 +25,7 @@ namespace SpamBlocker.Events
             plugin.RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
             plugin.RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
             plugin.RegisterEventHandler<EventRoundStart>(OnRoundStart);
+            plugin.RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
         }
 
         private void OnMapStart(string mapName)
@@ -49,11 +50,17 @@ namespace SpamBlocker.Events
         private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
         {
             LoggingUtils.LogDebug("Round start event triggered", _config);
+            Server.NextFrame(_filterManager.ReapplyRenamedNames);
 
-            Server.NextFrame(() =>
-            {
-                _filterManager.ReapplyRenamedNames();
-            });
+            return HookResult.Continue;
+        }
+
+        private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
+        {
+            CCSPlayerController? player = @event.Userid;
+
+            if (!PlayerUtils.IsValidPlayer(player)) return HookResult.Continue;
+            Server.NextFrame(_filterManager.ReapplyRenamedNames);
 
             return HookResult.Continue;
         }
