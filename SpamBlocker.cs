@@ -14,7 +14,7 @@ namespace SpamBlocker;
 public class SpamBlocker : BasePlugin, IPluginConfig<SpamBlockerConfig>
 {
     public override string ModuleName => "SpamBlocker";
-    public override string ModuleVersion => "1.0.4";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Advanced spam and content filtering plugin with Discord integration";
 

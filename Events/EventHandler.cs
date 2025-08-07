@@ -49,8 +49,25 @@ namespace SpamBlocker.Events
 
         private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
         {
-            LoggingUtils.LogDebug("Round start event triggered", _config);
-            Server.NextFrame(_filterManager.ReapplyRenamedNames);
+            LoggingUtils.LogDebug("Round start event triggered - scheduling name reapplication", _config);
+
+            var timer1 = new CounterStrikeSharp.API.Modules.Timers.Timer(1.0f, () =>
+            {
+                LoggingUtils.LogDebug("First name reapplication (1s delay)", _config);
+                _filterManager.ReapplyRenamedNames();
+            });
+
+            var timer2 = new CounterStrikeSharp.API.Modules.Timers.Timer(3.0f, () =>
+            {
+                LoggingUtils.LogDebug("Second name reapplication (3s delay)", _config);
+                _filterManager.ReapplyRenamedNames();
+            });
+
+            var timer3 = new CounterStrikeSharp.API.Modules.Timers.Timer(5.0f, () =>
+            {
+                LoggingUtils.LogDebug("Third name reapplication (5s delay)", _config);
+                _filterManager.ReapplyRenamedNames();
+            });
 
             return HookResult.Continue;
         }
@@ -60,7 +77,11 @@ namespace SpamBlocker.Events
             CCSPlayerController? player = @event.Userid;
 
             if (!PlayerUtils.IsValidPlayer(player)) return HookResult.Continue;
-            Server.NextFrame(_filterManager.ReapplyRenamedNames);
+            var timer = new CounterStrikeSharp.API.Modules.Timers.Timer(2.0f, () =>
+            {
+                LoggingUtils.LogDebug($"Player spawn name reapplication for {PlayerUtils.GetSafePlayerName(player)}", _config);
+                _filterManager.ReapplyRenamedNames();
+            });
 
             return HookResult.Continue;
         }
