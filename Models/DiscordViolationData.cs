@@ -27,6 +27,42 @@ namespace SpamBlocker.Models
             };
         }
 
+        public static DiscordViolationData FromCachedPlayerInfo(object playerInfo, string violationType, FilterResult filterResult, string serverName)
+        {
+            try
+            {
+                var nameProperty = playerInfo.GetType().GetProperty("Name");
+                var steamIdProperty = playerInfo.GetType().GetProperty("SteamId");
+
+                string playerName = nameProperty?.GetValue(playerInfo)?.ToString() ?? "Unknown";
+                string steamId = steamIdProperty?.GetValue(playerInfo)?.ToString() ?? "Unknown";
+
+                return new DiscordViolationData
+                {
+                    PlayerName = CleanPlayerName(playerName),
+                    SteamId = steamId,
+                    ServerName = serverName,
+                    ViolationType = violationType,
+                    Reason = filterResult.Reason,
+                    DetectedContent = filterResult.DetectedContent,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+            catch
+            {
+                return new DiscordViolationData
+                {
+                    PlayerName = "Unknown",
+                    SteamId = "Unknown",
+                    ServerName = serverName,
+                    ViolationType = violationType,
+                    Reason = filterResult.Reason,
+                    DetectedContent = filterResult.DetectedContent,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
         private static string CleanPlayerName(string playerName)
         {
             return playerName

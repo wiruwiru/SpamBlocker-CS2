@@ -17,17 +17,26 @@ namespace SpamBlocker.Utils
             _discordService = discordService;
         }
 
-        public static void LogViolation(CCSPlayerController player, string type, FilterResult filterResult, SpamBlockerConfig config)
+        public static void LogViolation(CCSPlayerController player, string type, FilterResult filterResult, SpamBlockerConfig config, object? playerInfo = null)
         {
             if (config.ChatProtection.LogViolations)
             {
-                LogViolationToConsole(player, type, filterResult);
+                LogViolationToConsole(player, type, filterResult, playerInfo);
             }
 
             if (config.DiscordLogging.Enabled && _discordService != null)
             {
                 var serverName = GetSafeServerName(config);
-                var violationData = DiscordViolationData.FromPlayer(player, type, filterResult, serverName);
+
+                DiscordViolationData violationData;
+                if (playerInfo != null)
+                {
+                    violationData = DiscordViolationData.FromCachedPlayerInfo(playerInfo, type, filterResult, serverName);
+                }
+                else
+                {
+                    violationData = DiscordViolationData.FromPlayer(player, type, filterResult, serverName);
+                }
 
                 Task.Run(async () =>
                 {
@@ -56,12 +65,27 @@ namespace SpamBlocker.Utils
             }
         }
 
-        private static void LogViolationToConsole(CCSPlayerController player, string type, FilterResult filterResult)
+        private static void LogViolationToConsole(CCSPlayerController player, string type, FilterResult filterResult, object? playerInfo = null)
         {
             try
             {
-                string logMessage = $"[SpamBlocker] Violation - Player: {player.PlayerName} " +
-                                  $"(SteamID: {player.AuthorizedSteamID?.SteamId64}) | " +
+                string playerName, steamId;
+                if (playerInfo != null)
+                {
+                    var nameProperty = playerInfo.GetType().GetProperty("Name");
+                    var steamIdProperty = playerInfo.GetType().GetProperty("SteamId");
+
+                    playerName = nameProperty?.GetValue(playerInfo)?.ToString() ?? "Unknown";
+                    steamId = steamIdProperty?.GetValue(playerInfo)?.ToString() ?? "Unknown";
+                }
+                else
+                {
+                    playerName = player?.PlayerName ?? "Unknown";
+                    steamId = player?.AuthorizedSteamID?.SteamId64.ToString() ?? "Unknown";
+                }
+
+                string logMessage = $"[SpamBlocker] Violation - Player: {playerName} " +
+                                  $"(SteamID: {steamId}) | " +
                                   $"Type: {type} | " +
                                   $"Reason: {filterResult.Reason} | " +
                                   $"Content: '{filterResult.DetectedContent}' | " +

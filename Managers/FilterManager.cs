@@ -14,11 +14,17 @@ namespace SpamBlocker.Managers
         private readonly BasePlugin _plugin;
         private readonly HashSet<int> _renamedPlayers;
 
+        private readonly Dictionary<int, DateTime> _lastViolationTime;
+        private readonly Dictionary<int, string> _lastViolationType;
+        private readonly TimeSpan _violationCooldown = TimeSpan.FromSeconds(5);
+
         public FilterManager(SpamBlockerConfig config, BasePlugin plugin)
         {
             _config = config;
             _plugin = plugin;
             _renamedPlayers = new HashSet<int>();
+            _lastViolationTime = new Dictionary<int, DateTime>();
+            _lastViolationType = new Dictionary<int, string>();
             LoggingUtils.LogDebug("FilterManager initialized successfully", _config);
         }
 
@@ -498,8 +504,32 @@ namespace SpamBlocker.Managers
             if (PlayerUtils.IsValidPlayer(player))
             {
                 _renamedPlayers.Remove(player.Slot);
+                _lastViolationTime.Remove(player.Slot);
+                _lastViolationType.Remove(player.Slot);
                 LoggingUtils.LogDebug($"Cleaned up data for disconnected player slot {player.Slot}", _config);
             }
+        }
+
+        public bool IsPlayerInViolationCooldown(CCSPlayerController player, string violationType)
+        {
+            int playerId = player.Slot;
+            DateTime now = DateTime.UtcNow;
+
+            if (_lastViolationTime.ContainsKey(playerId) && _lastViolationType.ContainsKey(playerId))
+            {
+                DateTime lastViolation = _lastViolationTime[playerId];
+                string lastType = _lastViolationType[playerId];
+
+                if (lastType == violationType && (now - lastViolation) < _violationCooldown)
+                {
+                    LoggingUtils.LogDebug($"Player {PlayerUtils.GetSafePlayerName(player)} is in cooldown for {violationType}", _config);
+                    return true;
+                }
+            }
+
+            _lastViolationTime[playerId] = now;
+            _lastViolationType[playerId] = violationType;
+            return false;
         }
 
         public void ReapplyRenamedNames()
@@ -533,6 +563,8 @@ namespace SpamBlocker.Managers
         public void ClearCache()
         {
             _renamedPlayers.Clear();
+            _lastViolationTime.Clear();
+            _lastViolationType.Clear();
             LoggingUtils.LogDebug("FilterManager cache cleared", _config);
         }
     }

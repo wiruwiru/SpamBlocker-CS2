@@ -74,7 +74,15 @@ namespace SpamBlocker.Managers
             if (filterResult.IsBlocked)
             {
                 LoggingUtils.LogDebug($"Message blocked: {filterResult.Reason}", _config);
-                HandleChatViolation(player!, message, filterResult, false);
+                bool isInCooldown = _filterManager.IsPlayerInViolationCooldown(player!, "Chat");
+                if (!isInCooldown)
+                {
+                    HandleChatViolation(player!, message, filterResult, false);
+                }
+                else
+                {
+                    LoggingUtils.LogDebug($"Player {player!.PlayerName} is in cooldown for Chat - blocking message but skipping sanctions", _config);
+                }
                 return HookResult.Handled;
             }
             else
@@ -126,7 +134,16 @@ namespace SpamBlocker.Managers
             if (filterResult.IsBlocked)
             {
                 LoggingUtils.LogDebug($"Team message blocked: {filterResult.Reason}", _config);
-                HandleChatViolation(player!, message, filterResult, true);
+                bool isInCooldown = _filterManager.IsPlayerInViolationCooldown(player!, "TeamChat");
+                if (!isInCooldown)
+                {
+                    HandleChatViolation(player!, message, filterResult, true);
+                }
+                else
+                {
+                    LoggingUtils.LogDebug($"Player {player!.PlayerName} is in cooldown for TeamChat - blocking message but skipping sanctions", _config);
+                }
+
                 return HookResult.Handled;
             }
             else
@@ -140,6 +157,7 @@ namespace SpamBlocker.Managers
         private void HandleChatViolation(CCSPlayerController player, string message, FilterResult filterResult, bool isTeamChat)
         {
             var chatType = isTeamChat ? "team chat" : "public chat";
+            string violationType = isTeamChat ? "TeamChat" : "Chat";
             LoggingUtils.LogDebug($"{chatType} violation by {player.PlayerName}: '{message}' - {filterResult.Reason}", _config);
 
             if (_config.ChatProtection.NotifyPlayer)
@@ -153,7 +171,15 @@ namespace SpamBlocker.Managers
                 NotificationUtils.NotifyAdminsViolation(player.PlayerName, _plugin.Localizer["admin_blocked_message", chatTypeKey], filterResult.Reason, filterResult.DetectedContent, _plugin);
             }
 
-            LoggingUtils.LogViolation(player, isTeamChat ? "TeamChat" : "Chat", filterResult, _config);
+            var playerInfo = new
+            {
+                Name = player.PlayerName,
+                SteamId = player.AuthorizedSteamID?.SteamId64.ToString() ?? "Unknown",
+                player.Slot,
+                player.UserId
+            };
+
+            LoggingUtils.LogViolation(player, violationType, filterResult, _config, playerInfo);
             ExecuteChatAction(player, filterResult);
         }
 
@@ -164,17 +190,35 @@ namespace SpamBlocker.Managers
             switch (action)
             {
                 case "kick":
-                    CommandUtils.ExecuteCommand(_config.ChatProtection.KickCommand, player, _config);
+                    var kickTimer = new CounterStrikeSharp.API.Modules.Timers.Timer(0.5f, () =>
+                    {
+                        if (player.IsValid)
+                        {
+                            CommandUtils.ExecuteCommand(_config.ChatProtection.KickCommand, player, _config);
+                        }
+                    });
                     break;
 
                 case "ban":
-                    CommandUtils.ExecuteCommand(_config.ChatProtection.BanCommand, player, _config);
+                    var banTimer = new CounterStrikeSharp.API.Modules.Timers.Timer(0.5f, () =>
+                    {
+                        if (player.IsValid)
+                        {
+                            CommandUtils.ExecuteCommand(_config.ChatProtection.BanCommand, player, _config);
+                        }
+                    });
                     break;
 
                 case "custom":
                     if (!string.IsNullOrEmpty(_config.ChatProtection.CustomCommand))
                     {
-                        CommandUtils.ExecuteCommand(_config.ChatProtection.CustomCommand, player, _config);
+                        var customTimer = new CounterStrikeSharp.API.Modules.Timers.Timer(0.5f, () =>
+                        {
+                            if (player.IsValid)
+                            {
+                                CommandUtils.ExecuteCommand(_config.ChatProtection.CustomCommand, player, _config);
+                            }
+                        });
                     }
                     break;
 
