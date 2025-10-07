@@ -5,7 +5,7 @@ SpamBlocker is an advanced filtering and protection system that provides compreh
 
 ### Basic Installation
 1. Install [CounterStrike Sharp](https://github.com/roflmuffin/CounterStrikeSharp) and [Metamod:Source](https://www.sourcemm.net/downloads.php/?branch=master)
-2. Download [SpamBlocker.zip](releases/latest) from releases
+2. Download [SpamBlocker.zip](https://github.com/wiruwiru/SpamBlocker-CS2/releases/latest) from releases
 3. Extract and upload to your game server: `csgo/addons/counterstrikesharp/plugins/SpamBlocker/`
 4. Start server and configure the generated config file at `csgo/addons/counterstrikesharp/configs/plugins/SpamBlocker/`
 
